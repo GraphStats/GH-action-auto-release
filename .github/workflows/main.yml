@@ -24,42 +24,40 @@ jobs:
     - name: Read and bump version
       id: version
       run: |
-        # Vérifier si vertion.json existe, sinon le créer
+        # Créer vertion.json si absent
         if [ ! -f vertion.json ]; then
           echo '{"vertion":"V1.0.0"}' > vertion.json
           echo "vertion.json created with version V1.0.0"
         fi
 
         # Lire la version actuelle
-        version=$(node -e "console.log(require('./vertion.json').vertion)")
+        version=$(node -pe "require('./vertion.json').vertion")
         echo "Current version: $version"
-        
-        # Supprimer le 'V' et séparer en majeur, mineur et patch
+
+        # Supprimer 'V' et séparer en majeur, mineur, patch
         version_numbers=${version#V}
         IFS='.' read -r major minor patch <<< "$version_numbers"
-        
-        # Incrémenter le patch
+
+        # Incrémenter patch
         patch=$((patch + 1))
-        
-        # Si le patch > 9, reset patch et incrémenter le mineur
+
+        # Gestion overflow
         if [ $patch -gt 9 ]; then
           patch=0
           minor=$((minor + 1))
         fi
-        
-        # Si le mineur > 9, reset mineur et incrémenter le majeur
         if [ $minor -gt 9 ]; then
           minor=0
           major=$((major + 1))
         fi
-        
+
         new_version="V$major.$minor.$patch"
         echo "New version: $new_version"
-        
+
         # Mettre à jour vertion.json
         node -e "const fs = require('fs'); const data = {vertion:'$new_version'}; fs.writeFileSync('vertion.json', JSON.stringify(data, null, 2));"
 
-        # Exporter la version pour les steps suivants
+        # Exporter pour steps suivants
         echo "new_version=$new_version" >> $GITHUB_ENV
 
     - name: Commit new version
@@ -67,7 +65,7 @@ jobs:
         git config user.name "github-actions[bot]"
         git config user.email "github-actions[bot]@users.noreply.github.com"
         git add vertion.json
-        git commit -m "Bump version to ${{ env.new_version }}" || echo "No changes to commit"
+        git diff --cached --quiet || git commit -m "Bump version to ${{ env.new_version }}"
         git push https://x-access-token:${{ secrets.GH_TOKEN }}@github.com/${{ github.repository }} HEAD:main
 
     - name: Create Release

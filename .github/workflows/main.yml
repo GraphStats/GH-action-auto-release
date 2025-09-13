@@ -29,7 +29,7 @@ jobs:
 
         # Créer vertion.json si absent
         if [ ! -f $VERSION_FILE ]; then
-          echo '{"vertion":"V1.0.0"}' > $VERSION_FILE
+          echo '{"vertion":"V0.9.9"}' > $VERSION_FILE
           echo "$VERSION_FILE created with version V1.0.0"
         fi
 
